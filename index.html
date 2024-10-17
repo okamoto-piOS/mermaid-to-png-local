@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MermaidをPNGにします！</title>
+    <!-- Google Fonts: Noto Sans JP -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 800px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+        .input-area, .output-area {
+            width: 48%;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            resize: none;
+        }
+        button {
+            background-color: #6200ea;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #3700b3;
+        }
+        img {
+            margin-top: 20px;
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        #mermaidContainer {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      window.mermaid = mermaid;
+
+      window.mermaid.initialize({
+          startOnLoad: false 
+      });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="input-area">
+            <h1>Mermaid→PNG！</h1>
+            <p>*ガントチャートは表示できません</p>
+            <textarea id="mermaidCode" placeholder="Mermaidコードを入力してください"></textarea>
+            <button id="generateBtn">PNG画像を生成！</button>
+        </div>
+
+        <div class="output-area">
+            <div id="mermaidContainer"></div>
+            <img id="outputImg" />
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('generateBtn').addEventListener('click', async () => {
+                var htmltoimage = require('html-to-image');
+                const mermaidCode = document.getElementById('mermaidCode').value;
+
+                const container = document.getElementById('mermaidContainer');
+                container.innerHTML = ''; // コンテナをクリア
+
+                try {
+                    container.style.display = 'block';
+                    document.getElementById('outputImg').src = '';
+                    const { svg } = await window.mermaid.render('generatedDiagram', mermaidCode);
+                    container.innerHTML = svg;
+
+                    const svgElement = container.querySelector('svg');
+                    if (!svgElement) {
+                        throw new Error('SVG element not found');
+                    }
+
+                    // バウンディングボックスを取得して、余白を最小限にする
+                    const bbox = svgElement.getBBox();
+                    svgElement.setAttribute('viewBox', `${bbox.x - 5} ${bbox.y - 5} ${bbox.width + 10} ${bbox.height + 10}`);
+                    svgElement.setAttribute('width', bbox.width + 10);
+                    svgElement.setAttribute('height', bbox.height + 10);
+
+                    // PNG変換
+                    const pngDataUrl = await htmltoimage.toPng(svgElement, { bgcolor: 'white' });
+
+                    document.getElementById('outputImg').src = pngDataUrl;
+                    container.style.display = 'none';
+
+                } catch (error) {
+                    console.error('Mermaid rendering failed:', error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
